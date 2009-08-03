@@ -3,7 +3,7 @@ import re, string
 import urlparse
 import os.path
 import sys
-from os import system
+import subprocess
 import MySQLdb
 
 conn = MySQLdb.connect("localhost", "root", "", "Data")
@@ -12,7 +12,7 @@ save_to_folder = "/mnt/x/Internet/Downloading/Downer"
 
 class Action:
 	# Using an URL, find the right name, path, etc.
-	def processUrl(self, url):
+	def processUrl(self, url, return_soon=False):
 		url_parts = urlparse.urlparse(url)
 		name = os.path.basename(url_parts.path)
 		if(name == ""): name = "index.html"
@@ -21,14 +21,15 @@ class Action:
 				
 		if(url_parts.hostname == "www.youtube.com"):
 			special = 'youtube'
-			name = self.getYoutubeTitle(url)
+			name = self.getYoutubeTitle(url, return_soon)
 			path = save_to_folder + '/' + name + ".flv"
 		
 		return [name, path, special]
 	
 	# If its a YouTube page, get the Title.
-	def getYoutubeTitle(self, url):
-		html = urllib2.urlopen(url).read()
+	def getYoutubeTitle(self, url, return_soon=False):
+		html = ''
+		if(not return_soon): html = urllib2.urlopen(url).read()
 		
 		match = re.search(r'<title>([^<]+)</title>', html)
 		if(match): return match.group(1)
@@ -37,16 +38,30 @@ class Action:
 			if(match): return match.group(1)
 		return "youtube.html"
 	
-	def download(self, url, path, special):
+	# This functions checks for all the necessary info and downloads the file.
+	def download(self, url, path="", special=""):
 		# If needed info is not there in the DB.
 		if(path == ""):
-			data = info.processUrl(url)
+			data = self.processUrl(url)
 			path = data[1]
+			special = data[2]
 			
+		# Download it!
 		if(special == 'youtube'):
-			system("python youtube-dl.py -o '%s' '%s'" % (path, url))
-		
+			self.execute("youtube-dl -o '%s' '%s'" % (path, url))
 		else:
-			system("wget -o '%s' '%s'" % (path, url))
+			self.execute("wget -o '%s' '%s'" % (path, url))
+	
+	
+	def execute(self, command):
+		try:
+			retcode = subprocess.call(command, shell=True)
+			if retcode < 0:
+				print >>sys.stderr, "Child was terminated by signal", -retcode
+			else:
+				print >>sys.stderr, "Child returned", retcode
+		except OSError, e:
+			print >>sys.stderr, "Execution failed:", e
+
 
 action = Action()

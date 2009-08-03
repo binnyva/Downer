@@ -102,8 +102,8 @@ class App:
 	# A drop has happened - now, process the url.
 	def processUrl(self, url):
 		global action
-		if(self.gui): self.ent_url.set_text(url)
-		data = action.processUrl(url)
+		if(self.gui and url != ""): self.ent_url.set_text(url)
+		data = action.processUrl(url, True)
 		name = data[0]
 		path = data[1]
 		self.special = data[2]
@@ -116,7 +116,7 @@ class App:
 	# Use the values in the GUI and send it to the save function
 	def stageSave(self, widget):
 		self.save(self.ent_name.get_text(), self.ent_url.get_text(), self.ent_path.get_text(), self.special)
-		self.destroy()
+		gtk.main_quit()
 	
 	# Save the data to the DB.
 	def save(self, name, url, path, special):
