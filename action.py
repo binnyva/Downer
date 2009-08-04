@@ -16,15 +16,19 @@ class Action:
 		url_parts = urlparse.urlparse(url)
 		name = os.path.basename(url_parts.path)
 		if(name == ""): name = "index.html"
-		path = save_to_folder + '/' + name
+		path = self.makePath(name)
 		special = ''
-				
+		
 		if(url_parts.hostname == "www.youtube.com"):
 			special = 'youtube'
 			name = self.getYoutubeTitle(url, return_soon)
-			path = save_to_folder + '/' + name + ".flv"
+			path = self.makePath(name + ".flv")
 		
 		return [name, path, special]
+	
+	# Create a path to where the downloads should go to and return it.
+	def makePath(self, name):
+		return save_to_folder + '/' + name
 	
 	# If its a YouTube page, get the Title.
 	def getYoutubeTitle(self, url, return_soon=False):
@@ -39,7 +43,7 @@ class Action:
 		return "youtube.html"
 	
 	# This functions checks for all the necessary info and downloads the file.
-	def download(self, url, path="", special=""):
+	def download(self, url, path="", special="", download_id=0):
 		# If needed info is not there in the DB.
 		if(path == ""):
 			data = self.processUrl(url)
@@ -48,20 +52,23 @@ class Action:
 			
 		# Download it!
 		if(special == 'youtube'):
-			self.execute("youtube-dl -o '%s' '%s'" % (path, url))
+			self.execute("youtube-dl -o '%s' '%s'" % (path, url), download_id)
 		else:
-			self.execute("wget -o '%s' '%s'" % (path, url))
+			self.execute("wget -O '%s' '%s'" % (path, url), download_id)
 	
-	
-	def execute(self, command):
+	# Execute the given command.
+	def execute(self, command, download_id=0):
 		try:
 			retcode = subprocess.call(command, shell=True)
 			if retcode < 0:
 				print >>sys.stderr, "Child was terminated by signal", -retcode
 			else:
-				print >>sys.stderr, "Child returned", retcode
+				# THe thing that was being downloaded was from the database. So, mark it as downloaded when done.
+				if(download_id > 0):
+					global sql
+					sql.execute("UPDATE Downer SET downloaded='1', downloaded_on=NOW() WHERE id=%d" % download_id)
+					
 		except OSError, e:
 			print >>sys.stderr, "Execution failed:", e
-
 
 action = Action()

@@ -1,0 +1,9 @@
+Downer
+1.00.A Alpha
+
+A small app which you can use to queue up downloads. Just drag drop the URLs into the app and it will be stored in a MySQL database. Then you can run the downloader.py to download the files one by one.
+
+Needed Modules: pygtk, MySQLdb
+
+Binny V A
+http://binnyva.com/

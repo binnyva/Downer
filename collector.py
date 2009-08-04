@@ -104,24 +104,26 @@ class App:
 		global action
 		if(self.gui and url != ""): self.ent_url.set_text(url)
 		data = action.processUrl(url, True)
-		name = data[0]
-		path = data[1]
+		self.url = url
+		self.name = data[0]
+		self.path = data[1]
 		self.special = data[2]
 		
 		if(self.gui): self.status_bar.remove(self.status_bar_context_id, self.status_bar_message_id)
 		
-		if(self.gui): self.ent_name.set_text(name)
-		if(self.gui): self.ent_path.set_text(path)
+		if(self.gui): self.ent_name.set_text(self.name)
+		if(self.gui): self.ent_path.set_text(self.path)
+		return [self.name, self.path, self.special]
 			
 	# Use the values in the GUI and send it to the save function
 	def stageSave(self, widget):
-		self.save(self.ent_name.get_text(), self.ent_url.get_text(), self.ent_path.get_text(), self.special)
+		self.save(self.ent_url.get_text(), self.ent_name.get_text(), self.ent_path.get_text(), self.special)
 		gtk.main_quit()
 	
 	# Save the data to the DB.
-	def save(self, name, url, path, special):
+	def save(self, url, name, path, special):
 		global sql
-		sql.execute("INSERT INTO Download(name, url, file_path, special, added_on) VALUES(%s, %s, %s, %s, NOW())", (name, url, path, special))
+		sql.execute("INSERT INTO Downer(name, url, file_path, special, added_on) VALUES(%s, %s, %s, %s, NOW())", (name, url, path, special))
 
 	# The Constructor. 
 	def __init__(self):
@@ -131,6 +133,11 @@ class App:
 		if argc:
 			self.gui = False
 			self.processUrl(sys.argv[1])
+			if(argc > 1): 
+				self.name = sys.argv[2]
+				self.path = action.makePath(self.name)
+			
+			self.save(self.url, self.name, self.path, self.special)
 		
 		# No arguments, GUI needed.
 		else:

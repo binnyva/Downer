@@ -12,10 +12,10 @@ if __name__ == '__main__':
 			action.download(sys.argv[1])
 			
 		else:
-			sql.execute("SELECT name, url, file_path, special FROM Download WHERE downloaded='0' ORDER BY added_on ASC")
+			sql.execute("SELECT id, name, url, file_path, special FROM Downer WHERE downloaded='0' ORDER BY added_on ASC")
 			result_set = sql.fetchall ()
 			for row in result_set:
-				action.download(row['url'], row['file_path'], row['special'])
+				action.download(row['url'], row['file_path'], row['special'], int(row['id']))
 				
 	except KeyboardInterrupt:
 		sys.exit(u'\nCtrl+C invoked. Exiting...')
