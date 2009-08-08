@@ -52,21 +52,27 @@ class Action:
 			
 		# Download it!
 		if(special == 'youtube'):
-			self.execute("youtube-dl -o '%s' '%s'" % (path, url), download_id)
+			self.execute("youtube-dl -o '%s' '%s'" % (path, url), download_id, path)
 		else:
-			self.execute("wget -O '%s' '%s'" % (path, url), download_id)
+			self.execute("wget -O '%s' '%s'" % (path, url), download_id, path)
+		
 	
 	# Execute the given command.
-	def execute(self, command, download_id=0):
+	def execute(self, command, download_id=0, path=''):
 		try:
+			global sql
+			if(download_id > 0):
+				sql.execute("UPDATE Downer SET downloaded='-1' WHERE id=%d" % download_id)
+
 			retcode = subprocess.call(command, shell=True)
 			if retcode < 0:
 				print >>sys.stderr, "Child was terminated by signal", -retcode
 			else:
 				# THe thing that was being downloaded was from the database. So, mark it as downloaded when done.
 				if(download_id > 0):
-					global sql
-					sql.execute("UPDATE Downer SET downloaded='1', downloaded_on=NOW() WHERE id=%d" % download_id)
+					size = int(os.path.getsize(path))
+					mb_size = (size / 1024) / 1024 # getsize() returns size in bytes - so convent to KB and the MB.
+					sql.execute("UPDATE Downer SET downloaded='1', downloaded_on=NOW(), file_size=%f WHERE id=%d" % (mb_size, download_id))
 					
 		except OSError, e:
 			print >>sys.stderr, "Execution failed:", e
