@@ -18,5 +18,7 @@ if __name__ == '__main__':
 				action.download(row['url'], row['file_path'], row['special'], int(row['id']))
 				
 	except KeyboardInterrupt:
-		sys.exit(u'\nCtrl+C invoked. Exiting...')
+		print "\nResetting status for Download #" + str(action.currently_downloading)
+		sql.execute("UPDATE Downer SET downloaded='0' WHERE id=%d" % action.currently_downloading)
+		sys.exit(u'Ctrl+C invoked. Exiting...')
 	

@@ -11,6 +11,8 @@ sql = conn.cursor(MySQLdb.cursors.DictCursor)
 save_to_folder = "/mnt/x/Internet/Downloading/Downer"
 
 class Action:
+	currently_downloading = 0
+	
 	# Using an URL, find the right name, path, etc.
 	def processUrl(self, url, return_soon=False):
 		url_parts = urlparse.urlparse(url)
@@ -44,18 +46,39 @@ class Action:
 	
 	# This functions checks for all the necessary info and downloads the file.
 	def download(self, url, path="", special="", download_id=0):
+		global sql
+		
+		# Make extra sure that the file has not been downloaded - importent if your are running multiple instance of the app together.
+		if(download_id):
+			sql.execute("SELECT downloaded FROM Downer WHERE id='%d'" % download_id)
+			result_set = sql.fetchone ()
+			if(result_set['downloaded'] != '0'): return
+			
+			self.currently_downloading = download_id
+			
+		# Make sure we are not overwriteing an exsiting file.
+		if(os.access(path, os.F_OK)):
+			print "The file '"+path+"' exists. Overwrite (Y/N)?"
+			overwrite = raw_input()
+			
+			#If the user says overwrite, delet the file and continue with the download. If no, skip to the next download.
+			if(overwrite == 'y' or overwrite == 'Y'): os.remove(path)
+			else: return
+		
 		# If needed info is not there in the DB.
 		if(path == ""):
 			data = self.processUrl(url)
 			path = data[1]
 			special = data[2]
-			
+		
 		# Download it!
 		if(special == 'youtube'):
 			self.execute("youtube-dl -o '%s' '%s'" % (path, url), download_id, path)
 		else:
 			self.execute("wget -O '%s' '%s'" % (path, url), download_id, path)
 		
+		# Once the download is done, unset the currently_downloading flag.
+		self.currently_downloading = 0
 	
 	# Execute the given command.
 	def execute(self, command, download_id=0, path=''):
@@ -72,7 +95,7 @@ class Action:
 				if(download_id > 0):
 					size = int(os.path.getsize(path))
 					mb_size = (size / 1024) / 1024 # getsize() returns size in bytes - so convent to KB and the MB.
-					sql.execute("UPDATE Downer SET downloaded='1', downloaded_on=NOW(), file_size=%f WHERE id=%d" % (mb_size, download_id))
+					sql.execute("UPDATE Downer SET downloaded='1', downloaded_on=NOW(), file_size='%f' WHERE id=%d" % (mb_size, download_id))
 					
 		except OSError, e:
 			print >>sys.stderr, "Execution failed:", e
