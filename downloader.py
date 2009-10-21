@@ -9,10 +9,13 @@ if __name__ == '__main__':
 		
 		# We have arguments - download it.
 		if argc:
-			action.download(sys.argv[1])
+			path = ""
+			if(argc > 1): path = sys.argv[2]
+			action.download(sys.argv[1], path)
 			
 		else:
-			sql.execute("SELECT id, name, url, file_path, special FROM Downer WHERE downloaded='0' ORDER BY added_on ASC, id")
+			#  LIMIT 0,1
+			sql.execute("SELECT id, name, url, file_path, special FROM Downer WHERE downloaded='0' ORDER BY download_order, added_on ASC, id")
 			result_set = sql.fetchall ()
 			for row in result_set:
 				action.download(row['url'], row['file_path'], row['special'], int(row['id']))

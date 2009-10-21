@@ -102,6 +102,7 @@ class App:
 	# A drop has happened - now, process the url.
 	def processUrl(self, url):
 		global action
+		print url
 		if(self.gui and url != ""): self.ent_url.set_text(url)
 		data = action.processUrl(url, True)
 		self.url = url
