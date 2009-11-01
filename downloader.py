@@ -15,7 +15,7 @@ if __name__ == '__main__':
 			
 		else:
 			#  LIMIT 0,1
-			sql.execute("SELECT id, name, url, file_path, special FROM Downer WHERE downloaded='0' ORDER BY download_order, added_on ASC, id")
+			sql.execute("SELECT id, name, url, file_path, special FROM Downer WHERE downloaded='0' ORDER BY download_order, added_on ASC, id LIMIT 0,1")
 			result_set = sql.fetchall ()
 			for row in result_set:
 				action.download(row['url'], row['file_path'], row['special'], int(row['id']))

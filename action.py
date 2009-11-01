@@ -32,6 +32,10 @@ class Action:
 			special = 'youku'
 			name = self.getYoukuTitle(url)
 			path = self.makePath(name + ".flv")
+		
+		elif(url_parts.hostname == "rapidshare.com"):
+			special = 'rapidshare'
+			# RapidShare's name and path is already covered in the defualt method.
 			
 		return [name, path, special]
 	
@@ -119,6 +123,7 @@ class Action:
 			if(contents):
 				match = re.findall(r"href=(http[^'>]+)", contents)
 				if(match): return match
+		
 		return url
 	
 	# This functions checks for all the necessary info and downloads the file.
@@ -151,6 +156,10 @@ class Action:
 		# Download it!
 		if(special == 'youtube'):
 			self.execute("youtube-dl -o '%s' '%s'" % (path, url), download_id, path)
+		
+		elif(special == 'rapidshare'):
+			self.execute("rapidshare '%s' '%s'" % (url, path), download_id, path)
+
 		else:
 			url = self.getDownloadUrl(url, special)
 			
@@ -176,12 +185,15 @@ class Action:
 	def execute(self, command, download_id=0, path=''):
 		try:
 			global sql
-			if(download_id > 0):
-				sql.execute("UPDATE Downer SET downloaded='-1' WHERE id=%d" % download_id)
+			if(download_id > 0): sql.execute("UPDATE Downer SET downloaded='-1' WHERE id=%d" % download_id)
 
 			retcode = subprocess.call(command, shell=True)
-			if retcode < 0:
+			
+			# Error!
+			if retcode != 0:
 				print >>sys.stderr, "Child was terminated by signal", -retcode
+				if(download_id > 0): sql.execute("UPDATE Downer SET downloaded='0' WHERE id=%d" % download_id)
+				
 			else:
 				# The thing that was being downloaded was from the database. So, mark it as downloaded when done.
 				if(download_id > 0 and path != ''):
@@ -191,5 +203,6 @@ class Action:
 					
 		except OSError, e:
 			print >>sys.stderr, "Execution failed:", e
+			if(download_id > 0): sql.execute("UPDATE Downer SET downloaded='0' WHERE id=%d" % download_id)
 
 action = Action()
