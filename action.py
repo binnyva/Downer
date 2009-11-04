@@ -9,6 +9,11 @@ save_to_folder = "/mnt/x/Internet/Downloading/Downer"
 
 class Action:
 	currently_downloading = 0
+	verbose = False
+	yes_to_all = False
+	
+	def info(self, message):
+		if(self.verbose): print message
 	
 	# Using an URL, find the right name, path, etc.
 	def processUrl(self, url, return_soon=False):
@@ -36,6 +41,9 @@ class Action:
 		elif(url_parts.hostname == "rapidshare.com"):
 			special = 'rapidshare'
 			# RapidShare's name and path is already covered in the defualt method.
+		
+		elif(url_parts.hostname == "www.megaupload.com"):
+			special = 'megaupload'
 			
 		return [name, path, special]
 	
@@ -140,8 +148,10 @@ class Action:
 			
 		# Make sure we are not overwriteing an exsiting file.
 		if(os.access(path, os.F_OK)):
-			print "The file '"+path+"' exists. Overwrite (Y/N)?"
-			overwrite = raw_input()
+			overwrite = 'y'
+			if(self.yes_to_all == False):
+				print "The file '"+path+"' exists. Overwrite (Y/N)?"
+				overwrite = raw_input()
 			
 			#If the user says overwrite, delet the file and continue with the download. If no, skip to the next download.
 			if(overwrite == 'y' or overwrite == 'Y'): os.remove(path)
@@ -159,6 +169,9 @@ class Action:
 		
 		elif(special == 'rapidshare'):
 			self.execute("rapidshare '%s' '%s'" % (url, path), download_id, path)
+		
+		elif(special == 'megaupload'):
+			self.execute("megaupload '%s' '%s'" % (url, path), download_id, path)
 
 		else:
 			url = self.getDownloadUrl(url, special)
