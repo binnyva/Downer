@@ -38,12 +38,20 @@ class Action:
 			name = self.getYoukuTitle(url)
 			path = self.makePath(name + ".flv")
 		
+		# Use external tools for these.
 		elif(url_parts.hostname == "rapidshare.com"):
 			special = 'rapidshare'
 			# RapidShare's name and path is already covered in the defualt method.
 		
 		elif(url_parts.hostname == "www.megaupload.com"):
 			special = 'megaupload'
+		
+		elif(url_parts.hostname == "www.mediafire.com"):
+			special = 'mediafire'
+			
+		elif(url_parts.hostname == "www.realitylapse.com"):
+			# realitylapse is an Anime site.
+			special = 'realitylapse'
 			
 		return [name, path, special]
 	
@@ -172,6 +180,12 @@ class Action:
 		
 		elif(special == 'megaupload'):
 			self.execute("megaupload '%s' '%s'" % (url, path), download_id, path)
+		
+		elif(special == 'mediafire'):
+			self.execute("mediafire '%s' '%s'" % (url, path), download_id, path)
+		
+		elif(special == 'realitylapse'):
+			self.execute("realitylapse '%s' '%s'" % (url, path), download_id, path)
 
 		else:
 			url = self.getDownloadUrl(url, special)
@@ -183,10 +197,10 @@ class Action:
 				for individual_url in url:
 					path = re.sub(r'\.([^\.]+)$', '_'+str(part_count)+r'.\1', path)
 					self.execute("wget -c -O '%s' '%s'" % (path, individual_url), download_id, '')
-					size += int(os.path.getsize(path))
+					size += os.path.getsize(path)
 					part_count += 1
 					
-				mb_size = (size / 1024) / 1024
+				mb_size = round((size / 1024) / 1024, 1)
 				sql.execute("UPDATE Downer SET downloaded='1', downloaded_on=NOW(), file_size='%f' WHERE id=%d" % (mb_size, download_id))
 			else:
 				self.execute("wget -c -O '%s' '%s'" % (path, url), download_id, path)
